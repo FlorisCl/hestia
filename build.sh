@@ -22,9 +22,9 @@ if [[ $1 == dev ]]; then
         DB_CONTAINER='hestia-database-dev'
 fi
 
-docker build --build-arg=APP_VERSION="$APP_VERSION" --tag wtfloris/hestia-bot:$TAG -f docker/Dockerfile.bot .
-docker build --build-arg=APP_VERSION="$APP_VERSION" --tag wtfloris/hestia-scraper:$TAG -f docker/Dockerfile.scraper .
-docker build --build-arg=APP_VERSION="$APP_VERSION" --build-arg=APP_VERSION_DATE="$(git show -s --format=%cs HEAD)" --tag wtfloris/hestia-web:$TAG -f web/Dockerfile web/
+docker build --build-arg=APP_VERSION="$APP_VERSION" --tag floriscl/hestia-bot:$TAG -f docker/Dockerfile.bot .
+docker build --build-arg=APP_VERSION="$APP_VERSION" --tag floriscl/hestia-scraper:$TAG -f docker/Dockerfile.scraper .
+docker build --build-arg=APP_VERSION="$APP_VERSION" --build-arg=APP_VERSION_DATE="$(git show -s --format=%cs HEAD)" --tag floris.cl/hestia-web:$TAG -f web/Dockerfile web/
 
 if [[ $1 == -y ]] || [[ $2 == -y ]]; then
         docker compose $DOCKER_COMPOSE_ARGS up -d
