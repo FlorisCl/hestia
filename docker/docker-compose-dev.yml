@@ -10,7 +10,7 @@ x-scraper-dev: &scraper-dev-base
   healthcheck:
     test: pgrep cron || exit 1
     start_period: 5s
-  image: wtfloris/hestia-scraper:dev
+  image: floriscl/hestia-scraper:dev
   init: true
   networks:
     - hestia-network-dev
@@ -25,7 +25,7 @@ services:
     healthcheck:
       test: cat /proc/1/cmdline || exit 1
       start_period: 5s
-    image: wtfloris/hestia-bot:dev
+    image: floriscl/hestia-bot:dev
     networks:
       - hestia-network-dev
     restart: unless-stopped
@@ -198,7 +198,7 @@ services:
     healthcheck:
       test: pgrep cron || exit 1
       start_period: 5s
-    image: wtfloris/hestia-scraper:dev
+    image: floriscl/hestia-scraper:dev
     init: true
     network_mode: host
     cap_add:
@@ -402,7 +402,7 @@ services:
 
   hestia-web:
     container_name: hestia-web-dev
-    image: wtfloris/hestia-web:dev
+    image: floriscl/hestia-web:dev
     networks:
       - hestia-network-dev
     ports:

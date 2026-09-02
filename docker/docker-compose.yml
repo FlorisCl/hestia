@@ -10,7 +10,7 @@ x-scraper: &scraper-base
   healthcheck:
     test: pgrep cron || exit 1
     start_period: 5s
-  image: wtfloris/hestia-scraper:latest
+  image: floriscl/hestia-scraper:latest
   init: true
   networks:
     - hestia-network
@@ -25,7 +25,7 @@ services:
     healthcheck:
       test: cat /proc/1/cmdline || exit 1
       start_period: 5s
-    image: wtfloris/hestia-bot:latest
+    image: floriscl/hestia-bot:latest
     networks:
       - hestia-network
     restart: unless-stopped
@@ -120,6 +120,21 @@ services:
     container_name: hestia-scraper-hexia-mosaic-plaza
     environment:
       - HESTIA_TARGET=hexia_mosaic-plaza
+      - HESTIA_CRON_SCHEDULE=* * * * *
+    # Plaza listings go first-come-first-served, so skip the random 0-300s
+    # startup jitter that entrypoint-scraper.sh otherwise adds to every scraper
+    # (it exists to spread load/avoid bot detection across ~50 containers, but
+    # here it would silently turn a 1-minute schedule into a 1-5 minute one).
+    command:
+      - /bin/sh
+      - -c
+      - |
+        SCHEDULE="$${HESTIA_CRON_SCHEDULE:-*/5 * * * *}"
+        echo "[$$(date -u '+%Y-%m-%d %H:%M:%S UTC')] agency=$${HESTIA_TARGET:-maintenance} schedule='$$SCHEDULE' (no startup delay)"
+        printenv | sed 's/=\(.*\)/="\1"/' > /etc/environment
+        echo "$$SCHEDULE root . /etc/environment; /usr/local/bin/python3 /scraper/hestia/scraper.py > /proc/1/fd/1 2>/proc/1/fd/2" > /etc/cron.d/hestia
+        chmod 0644 /etc/cron.d/hestia
+        exec cron -f
 
   hestia-scraper-hexia-noordveluwe:
     <<: *scraper-base
@@ -132,6 +147,25 @@ services:
     container_name: hestia-scraper-hexia-oostwestwonen
     environment:
       - HESTIA_TARGET=hexia_oostwestwonen
+
+  hestia-scraper-hexia-studentenenschede:
+    <<: *scraper-base
+    container_name: hestia-scraper-hexia-studentenenschede
+    environment:
+      - HESTIA_TARGET=hexia_studentenenschede
+      - HESTIA_CRON_SCHEDULE=* * * * *
+    # Roomspot (student housing, Enschede/Hengelo) — same no-startup-delay
+    # override as Plaza, see comment there for why.
+    command:
+      - /bin/sh
+      - -c
+      - |
+        SCHEDULE="$${HESTIA_CRON_SCHEDULE:-*/5 * * * *}"
+        echo "[$$(date -u '+%Y-%m-%d %H:%M:%S UTC')] agency=$${HESTIA_TARGET:-maintenance} schedule='$$SCHEDULE' (no startup delay)"
+        printenv | sed 's/=\(.*\)/="\1"/' > /etc/environment
+        echo "$$SCHEDULE root . /etc/environment; /usr/local/bin/python3 /scraper/hestia/scraper.py > /proc/1/fd/1 2>/proc/1/fd/2" > /etc/cron.d/hestia
+        chmod 0644 /etc/cron.d/hestia
+        exec cron -f
 
   hestia-scraper-hexia-thuisindeachterhoek:
     <<: *scraper-base
@@ -198,7 +232,7 @@ services:
     healthcheck:
       test: pgrep cron || exit 1
       start_period: 5s
-    image: wtfloris/hestia-scraper:latest
+    image: floriscl/hestia-scraper:latest
     init: true
     network_mode: host
     cap_add:
@@ -399,10 +433,18 @@ services:
     restart: unless-stopped
     volumes:
       - hestia-database-volume:/var/lib/postgresql/data
+    environment:
+      # POSTGRES_USER is deliberately left at its "postgres" default: the
+      # healthcheck below runs `pg_isready -U postgres`, and hestia.ddl does
+      # `CREATE SCHEMA hestia AUTHORIZATION postgres`, both of which assume
+      # that role still exists. Only needed on first boot with an empty
+      # volume — Postgres ignores these on subsequent restarts.
+      - POSTGRES_DB=hestia
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:d4t4b4s3}
 
   hestia-web:
     container_name: hestia-web
-    image: wtfloris/hestia-web:latest
+    image: floriscl/hestia-web:latest
     networks:
       - hestia-network
     ports:
