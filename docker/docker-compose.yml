@@ -440,7 +440,7 @@ services:
       # that role still exists. Only needed on first boot with an empty
       # volume — Postgres ignores these on subsequent restarts.
       - POSTGRES_DB=hestia
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:d4t4b4s3}
+      - POSTGRES_PASSWORD=d4t4b4s3
 
   hestia-web:
     container_name: hestia-web
